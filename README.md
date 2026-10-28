@@ -1,0 +1,73 @@
+# VyanLLM
+
+Run large language models on small GPUs and Macs by streaming the model one layer at a time
+from disk, so a model much bigger than your GPU memory can still run.
+
+VyanLLM is derived from [AirLLM](https://github.com/lyogavin/airllm) (Apache-2.0) and adds
+speed and memory improvements on top of it. See `NOTICE` for the full list of changes.
+
+## Install
+
+```bash
+pip install -e .                 # from this folder
+pip install -e ".[compression]"  # + 4-bit / 8-bit compression (NVIDIA)
+pip install -e ".[mac]"          # + the macOS MLX backend
+```
+
+Python 3.10 or newer is required.
+
+## Use
+
+```python
+from vyanllm import AutoModel
+
+model = AutoModel.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
+ids = model.tokenizer(["What is the capital of India?"], return_tensors="pt")["input_ids"]
+out = model.generate(ids.to(model.device), max_new_tokens=20)
+print(model.tokenizer.decode(out[0]))
+```
+
+On a Mac, `AutoModel` uses the MLX backend. To use the PyTorch path (Apple GPU via MPS),
+where VyanLLM's speedups apply, construct the base class directly:
+
+```python
+from vyanllm.vyanllm_base import VyanLLMBaseModel
+model = VyanLLMBaseModel("Qwen/Qwen2.5-7B-Instruct", cache_gb=4)
+```
+
+## Options added by VyanLLM
+
+| Option | Default | What it does |
+|---|---|---|
+| `cache_gb` | `None` | Keep layers in memory between tokens instead of re-reading them from disk. A number of GB, or `"auto"`. On a Mac layers stay on the Apple GPU; on NVIDIA this is a pinned RAM tier. |
+| `gpu_cache_gb` | `None` | NVIDIA only: keep layers resident in VRAM (filled before `cache_gb`). |
+| `async_copy` | on with CUDA | Copy the next layer to the GPU on a side stream while the current one computes. Uses one extra layer of VRAM. |
+| `memory_cleanup` | `"forward"` | `"layer"` restores AirLLM's cleanup after every layer (slow); `"end"` cleans only after `generate()`. |
+| `precast_shards` | `True` | Convert wider-dtype shards (e.g. fp32 run as bf16) once, so each token reads fewer bytes. |
+| `prefetching` | `True` | Read the next layer in the background. Now also works with `compression`. |
+
+`"auto"` leaves at least 4 GB or 15% of RAM free. If that leaves nothing for the cache, it
+says so and turns the cache off. On machines with little RAM, pass a number instead.
+
+## Benchmark
+
+`examples/benchmark.py` compares an original AirLLM checkout against VyanLLM and checks the
+generated tokens are identical:
+
+```bash
+git clone https://github.com/lyogavin/airllm airllm-orig
+python examples/benchmark.py --orig airllm-orig/air_llm --new . \
+    --model Qwen/Qwen2.5-0.5B-Instruct --tokens 8     # add --backend torch on a Mac
+```
+
+## Tests
+
+```bash
+python -m pytest tests -q
+```
+
+Some tests need a CUDA GPU or network access and are skipped or fail without them.
+
+## License
+
+Apache License 2.0. See `LICENSE` and `NOTICE`.

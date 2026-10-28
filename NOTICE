@@ -1,0 +1,18 @@
+VyanLLM
+Copyright 2026 Manish Kumar Soni
+
+This product is a modified version of AirLLM (https://github.com/lyogavin/airllm),
+created by Gavin Li and contributors, licensed under the Apache License, Version 2.0.
+The original copyright notices and license are retained; see LICENSE.
+
+Changes made in VyanLLM relative to AirLLM (based on AirLLM 4.0.0, October 2026):
+- Renamed the package, modules and classes from airllm / AirLLM to vyanllm / VyanLLM.
+- Prefetching works together with compression; dequantization runs on the device.
+- Optional asynchronous host-to-GPU copies on a side CUDA stream (async_copy).
+- Memory cleanup once per forward pass instead of after every layer (memory_cleanup).
+- One-time conversion of wider-dtype shards to the runtime dtype (precast_shards).
+- Layer cache that keeps layers in memory between tokens (cache_gb, gpu_cache_gb).
+- Shard format selected per backend, so the PyTorch path works on macOS (Apple GPU / MPS).
+- O(n) decompression of compressed shards; 8-bit no longer forces float16 output.
+- Benchmark script comparing against the original (examples/benchmark.py).
+- Removed the unrelated research projects, notebooks and assets bundled in the AirLLM repository.

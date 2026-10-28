@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+env/
+.pytest_cache/
+
+# macOS and external-drive (exFAT) metadata
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Editors
+.idea/
+.vscode/
+
+# Model weights, caches and secrets (never commit these)
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+*.npz
+*.mlx
+.cache/
+.env
+*.key
