@@ -60,6 +60,22 @@ python examples/benchmark.py --orig airllm-orig/air_llm --new . \
     --model Qwen/Qwen2.5-0.5B-Instruct --tokens 8     # add --backend torch on a Mac
 ```
 
+### Results
+
+Measured with `examples/benchmark.py` on a MacBook Air (Apple GPU, PyTorch MPS backend),
+`Qwen/Qwen2.5-0.5B-Instruct`, 8 generated tokens. All runs produce identical tokens.
+
+| Run | Time per token | Speedup | Peak RAM |
+|---|---|---|---|
+| Original AirLLM | 1.58 s | 1.0x | 1257 MB |
+| VyanLLM (defaults) | 0.20 s | 8.0x | 630 MB |
+| VyanLLM, per-layer cleanup (AirLLM's old behaviour) | 1.60 s | 1.0x | 632 MB |
+| VyanLLM + layer cache | 0.20 s | 8.0x | 626 MB |
+
+Most of the speedup comes from running memory cleanup once per forward pass instead of
+after every layer. Peak RAM is about half of the original's. Results on larger models and
+on NVIDIA GPUs will differ; the script lets you reproduce and extend these numbers.
+
 ## Tests
 
 ```bash
