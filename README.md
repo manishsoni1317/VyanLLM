@@ -62,7 +62,7 @@ python examples/benchmark.py --orig airllm-orig/air_llm --new . \
 
 ### Results
 
-Measured with `examples/benchmark.py` on a MacBook Air (Apple GPU, PyTorch MPS backend),
+Measured with `examples/benchmark.py` on a MacBook Air (Apple M3, 16 GB, PyTorch MPS backend),
 `Qwen/Qwen2.5-0.5B-Instruct`, 8 generated tokens. All runs produce identical tokens.
 
 | Run | Time per token | Speedup | Peak RAM |
@@ -72,9 +72,21 @@ Measured with `examples/benchmark.py` on a MacBook Air (Apple GPU, PyTorch MPS b
 | VyanLLM, per-layer cleanup (AirLLM's old behaviour) | 1.60 s | 1.0x | 632 MB |
 | VyanLLM + layer cache | 0.20 s | 8.0x | 626 MB |
 
-Most of the speedup comes from running memory cleanup once per forward pass instead of
-after every layer. Peak RAM is about half of the original's. Results on larger models and
-on NVIDIA GPUs will differ; the script lets you reproduce and extend these numbers.
+Same machine (M3, 16 GB), `Qwen/Qwen2.5-3B-Instruct`, 16 generated tokens, identical tokens in all runs:
+
+| Run | Time per token | Speedup | Peak RAM |
+|---|---|---|---|
+| Original AirLLM | 12.53 s | 1.0x | 2345 MB |
+| VyanLLM (defaults) | 10.30 s | 1.22x | 600 MB |
+| VyanLLM, per-layer cleanup (AirLLM's old behaviour) | 12.23 s | 1.02x | 485 MB |
+| VyanLLM + layer cache | 10.20 s | 1.23x | 616 MB |
+
+Running cleanup once per forward pass instead of after every layer is the source of the
+speedup. On the small model, where per-layer overhead dominates, it is 8x. On the 3B model each
+token reads about 5.3 GB of layer data from disk, so disk reads dominate and the gain is 1.2x;
+peak RAM is about 74% lower. The layer cache did not help here because the cache was smaller
+than the model. Results on larger models and on NVIDIA GPUs will differ; the script lets you
+reproduce and extend these numbers.
 
 ## Tests
 
